@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "v7CLR", "v7CLR\v7CLR.vcproj", "{9593ED8D-46A5-47ED-BD7D-1E28E96BF3B1}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "1cheaders", "1cheaders\1cheaders.vcproj", "{4BE7ED57-B930-47D7-B3E7-475EEF844E85}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9593ED8D-46A5-47ED-BD7D-1E28E96BF3B1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9593ED8D-46A5-47ED-BD7D-1E28E96BF3B1}.Debug|Win32.Build.0 = Debug|Win32
+		{9593ED8D-46A5-47ED-BD7D-1E28E96BF3B1}.Release|Win32.ActiveCfg = Release|Win32
+		{9593ED8D-46A5-47ED-BD7D-1E28E96BF3B1}.Release|Win32.Build.0 = Release|Win32
+		{4BE7ED57-B930-47D7-B3E7-475EEF844E85}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4BE7ED57-B930-47D7-B3E7-475EEF844E85}.Debug|Win32.Build.0 = Debug|Win32
+		{4BE7ED57-B930-47D7-B3E7-475EEF844E85}.Release|Win32.ActiveCfg = Release|Win32
+		{4BE7ED57-B930-47D7-B3E7-475EEF844E85}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
