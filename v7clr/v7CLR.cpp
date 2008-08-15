@@ -50,7 +50,7 @@ int DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		//new CDynLinkLibrary(v7CLRDLL);
 		
 		CCLRActivator::TheObject().Init();
-		pBkEndUI=GetBkEndUI();
+		//pBkEndUI=GetBkEndUI();
 		CMyContextBase::InitContextClass(CCLRFactory::m_myCtxBaseInfo);
 	}
 	else if (dwReason == DLL_PROCESS_DETACH)
