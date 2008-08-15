@@ -96,6 +96,7 @@ private:
 	void Init(Type^);
 	CCLRWrapper(Object^);
 	static int MethodComparer(MethodInfo^ meth1,MethodInfo^ meth2);
+	static int PropComparer(PropertyInfo^ prop1,PropertyInfo^ prop2);
 #else
 	char fill[4];//pClrObj
 	char fill2[60];//propInfoMap
@@ -172,3 +173,4 @@ public:
 	virtual int  SaveToString(CString &);
 	virtual int  SetPropVal(int,CValue const&);
 };
+

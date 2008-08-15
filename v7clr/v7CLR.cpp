@@ -4,6 +4,7 @@
 #include <afxdllx.h>
 #include "CLRActivator.h"
 #include "CLRFactory.h"
+#include "Cor.h"
 
 #ifdef _MANAGED
 //#error Please read instructions in v7CLR.cpp to compile with /clr
@@ -60,6 +61,8 @@ int DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		// Terminate the library before destructors are called
 		CCLRActivator::TheObject().Destroy();
 		CMyContextBase::DoneContextClass(CCLRFactory::m_myCtxBaseInfo);
+		//CoUninitializeEE(TRUE);
+
 		//AfxTermExtensionModule(v7CLRDLL);
 	}
 	return 1;   // ok

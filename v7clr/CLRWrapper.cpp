@@ -18,11 +18,18 @@ int CCLRWrapper::MethodComparer(MethodInfo^ meth1,MethodInfo^ meth2)
 	return meth1->GetHashCode()-meth2->GetHashCode();
 }
 
+int CCLRWrapper::PropComparer( PropertyInfo^ prop1,PropertyInfo^ prop2 )
+{
+	int result=Globals::sc->Compare(prop1->Name,prop2->Name);
+	if(result!=0) return result;
+	return prop1->GetHashCode()-prop2->GetHashCode();
+}
 void CCLRWrapper::Init(Type^ t)
 {
 	propertiesArray^ properties = t->GetProperties();
 	methodsArray^ methods = t->GetMethods();
 	Array::Sort(methods,gcnew Comparison<MethodInfo^>(MethodComparer));
+	Array::Sort(properties,gcnew Comparison<PropertyInfo^>(PropComparer));
 	std::string propName;
 	for(int i=0;i<properties->Length;i++)
 	{
@@ -178,27 +185,25 @@ CCLRWrapper::CCLRWrapper(CGetField* getField, const char* className)
  	if(!t->IsSubclassOf(Control::typeid))
  		CBLModule::RaiseExtRuntimeError ("Класс не является наследником Windows.Forms.Control", mmRedErr);
 	Control^ c = static_cast<Control^>(Activator::CreateInstance(t));
-	//CWnd* w= getField->m_GetDoc->GetFieldWnd(getField);
-	//CWnd* pw = w->GetParent();
-	//CRect r;
-	//w->GetWindowRect(r);
-	//int id=w->GetDlgCtrlID();
-	//pw->ScreenToClient(r);
-	////w->Detach();
-	////CWnd* childw = new CWnd();
-	//DWORD dwStyle = WS_CHILD | (getField->GetCtrlInfo()->m_CtrlType!=1 ? WS_TABSTOP : 0);
-	////if (getField->m_Visible)
-	//	dwStyle |= WS_VISIBLE;
-	//if (getField->GetReadOnly())
-	//	dwStyle |= WS_DISABLED;
-	//((NativeWindow^)c->WindowTarget)->AssignHandle(IntPtr(w->m_hWnd));
-	////w->Attach((HWND)c->Handle.ToPointer());
-	//c->Top=r.top;
-	//c->Left=r.left;
-	////c->CreateHandle();
-	//c->Refresh();
-	//pClrObj = c;
-	Init(t); 
+ 	CWnd* w= getField->m_GetDoc->GetFieldWnd(getField);
+ 	CRect r;
+ 	w->GetClientRect(r);
+	c->Top=r.top;
+	c->Left=r.left;
+	c->Height=r.bottom-r.top;
+	c->Width=r.right-r.left;
+// 	//w->Detach();
+// 	//CWnd* childw = new CWnd();
+// 	//if (getField->m_Visible)
+// 		dwStyle |= WS_VISIBLE;
+// 	if (getField->GetReadOnly())
+// 		dwStyle |= WS_DISABLED;
+ 	((NativeWindow^)c->WindowTarget)->AssignHandle(IntPtr(w->m_hWnd));
+// 	//w->Attach((HWND)c->Handle.ToPointer());
+// 	//c->CreateHandle();
+// 	c->Refresh();
+ 	pClrObj = c;
+ 	Init(t); 
 }
 
 CCLRWrapper::~CCLRWrapper(void)
@@ -210,7 +215,7 @@ CCLRWrapper::~CCLRWrapper(void)
 		if(pClrObj->GetType()->IsSubclassOf(Control::typeid))
 		{
 			Control^ c = static_cast<Control^>((Object^)pClrObj);
-			((NativeWindow^)c->WindowTarget)->DestroyHandle();
+			((NativeWindow^)c->WindowTarget)->ReleaseHandle();
 		}
 		delete pClrObj;
 	}
@@ -232,7 +237,9 @@ propInfoPtr CCLRWrapper::GetPropInfo(int propNum)
 		propInfoPtr pi=new PropInfo();
 		try
 		{
-			PropertyInfo^ p=pClrObj->GetType()->GetProperties()[propNum];
+			array<PropertyInfo^>^ props=pClrObj->GetType()->GetProperties();
+			Array::Sort(props,gcnew Comparison<PropertyInfo^>(PropComparer));
+			PropertyInfo^ p=props[propNum];
 			pi->clrGetAccessor = CFastInvoker::GetGetAccessorInvoker(p);
 			pi->clrSetAccessor = CFastInvoker::GetSetAccessorInvoker(p);
 			pi->propType=p->PropertyType;
@@ -278,7 +285,7 @@ void CCLRWrapper::ObjectToValue(Object^ obj, Type^ t,CValue& retVal)
 	{
 		CCLRWrapper* w=new CCLRWrapper(obj);
 		retVal.AssignContext(new CCLRContext(w));
-		retVal.m_Context->DecrRef();
+		//retVal.m_Context->DecrRef();
 	}else{
 		retVal = CValue((char*)(Marshal::StringToHGlobalAnsi(obj->ToString())).ToPointer());
 	}
@@ -477,7 +484,8 @@ int  CCLRWrapper::FindProp(char const * propName)const
 	propNamesMap_t::const_iterator p=propNamesMap.find(propName);
 	if(p==propNamesMap.end())
 		return -1;
-	return p->second;
+	int pn=p->second;
+	return pn;
 }
 
 int  CCLRWrapper::GetNProps(void)const
