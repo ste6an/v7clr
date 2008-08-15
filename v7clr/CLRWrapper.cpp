@@ -1,4 +1,5 @@
-#include "StdAfx.h"
+#include "stdafx.h"
+
 #pragma managed
 #include "CLRWrapper.h"
 #include "StringConvertor.h"
@@ -7,8 +8,6 @@ using namespace System::Threading;
 using namespace System::Reflection;
 using namespace System::Reflection::Emit;
 using namespace System::Windows::Forms;
-
-CBkEndUI*		pBkEndUI;
 
 int CCLRWrapper::MethodComparer(MethodInfo^ meth1,MethodInfo^ meth2)
 {
@@ -179,26 +178,26 @@ CCLRWrapper::CCLRWrapper(CGetField* getField, const char* className)
  	if(!t->IsSubclassOf(Control::typeid))
  		CBLModule::RaiseExtRuntimeError ("Класс не является наследником Windows.Forms.Control", mmRedErr);
 	Control^ c = static_cast<Control^>(Activator::CreateInstance(t));
-	CWnd* w= getField->m_GetDoc->GetFieldWnd(getField);
-	CWnd* pw = w->GetParent();
-	CRect r;
-	w->GetWindowRect(r);
-	int id=w->GetDlgCtrlID();
-	pw->ScreenToClient(r);
-	//w->Detach();
-	//CWnd* childw = new CWnd();
-	DWORD dwStyle = WS_CHILD | (getField->GetCtrlInfo()->m_CtrlType!=1 ? WS_TABSTOP : 0);
-	//if (getField->m_Visible)
-		dwStyle |= WS_VISIBLE;
-	if (getField->GetReadOnly())
-		dwStyle |= WS_DISABLED;
-	((NativeWindow^)c->WindowTarget)->AssignHandle(IntPtr(w->m_hWnd));
-	//w->Attach((HWND)c->Handle.ToPointer());
-	c->Top=r.top;
-	c->Left=r.left;
-	//c->CreateHandle();
-	c->Refresh();
-	pClrObj = c;
+	//CWnd* w= getField->m_GetDoc->GetFieldWnd(getField);
+	//CWnd* pw = w->GetParent();
+	//CRect r;
+	//w->GetWindowRect(r);
+	//int id=w->GetDlgCtrlID();
+	//pw->ScreenToClient(r);
+	////w->Detach();
+	////CWnd* childw = new CWnd();
+	//DWORD dwStyle = WS_CHILD | (getField->GetCtrlInfo()->m_CtrlType!=1 ? WS_TABSTOP : 0);
+	////if (getField->m_Visible)
+	//	dwStyle |= WS_VISIBLE;
+	//if (getField->GetReadOnly())
+	//	dwStyle |= WS_DISABLED;
+	//((NativeWindow^)c->WindowTarget)->AssignHandle(IntPtr(w->m_hWnd));
+	////w->Attach((HWND)c->Handle.ToPointer());
+	//c->Top=r.top;
+	//c->Left=r.left;
+	////c->CreateHandle();
+	//c->Refresh();
+	//pClrObj = c;
 	Init(t); 
 }
 
@@ -314,83 +313,83 @@ void CCLRWrapper::ValueToObject(const CValue &val, Object^% obj, Type^ t)
 		}
 }
 
-EventManager::EventManager(CCLRWrapper* w, Object^ sender, CBLContext* cont, String^ prefix)
-{
-	source=sender;
-	context = cont;
-	wrapper = w;
-	//System::Threading::Thread::CurrentThread->Name="Main thread";
-	//callProcDelegate = Marshal::GetDelegateForFunctionPointer((IntPtr)&CBLContext::CallAsProc,CallAsProcDelegate::typeid);
-	array<EventInfo^>^ events=source->GetType()->GetEvents();
-	int eventNum=0;
-	callProcDelegate = (CallAsProcDelegate^)Delegate::CreateDelegate(CallAsProcDelegate::typeid,this,GetType()->GetMethod("InvokeBLProc"));
-	CreateHandle();
-	for each(EventInfo^ ei in events)
-	{
-		char* eventName = (char*)Marshal::StringToHGlobalAnsi(static_cast<String^>(prefix+ei->Name)).ToPointer();
-		int r=context->FindMethod(eventName);
-		if(r>=0)
-		{
-			MethodInfo^ invokeMethodInfo=ei->EventHandlerType->GetMethod("Invoke");
-			Type^ delegateReturnType = invokeMethodInfo->ReturnParameter->ParameterType;
-			array<ParameterInfo^>^ ps = invokeMethodInfo->GetParameters();
-			array<Type^>^ paramTypes = gcnew array<Type^>(ps->Length+1);
-			paramTypes[0]=EventManager::typeid;
-			for (int i = 0; i < ps->Length; i++)
-				paramTypes[i+1]=ps[i]->ParameterType;
-			DynamicMethod^ dm = gcnew DynamicMethod(String::Empty,delegateReturnType,paramTypes,EventManager::typeid->Module);
-			dm->InitLocals=false;
-			ILGenerator^ il = dm->GetILGenerator();
-			LocalBuilder^ lb= il->DeclareLocal(ObjectArray::typeid);
-			CFastInvoker::EmitFastInt(il,ps->Length);
-			il->Emit(OpCodes::Newarr,Object::typeid);
-			il->Emit(OpCodes::Stloc,lb);
-			for (int i = 0; i < ps->Length; i++)
-			{
-				il->Emit(OpCodes::Ldloc, lb);
-				CFastInvoker::EmitFastInt(il,i);
-				il->Emit(OpCodes::Ldarg, i+1);
-				il->Emit(OpCodes::Stelem_Ref);
-			}
-			il->Emit(OpCodes::Ldarg_0);
-			il->Emit(OpCodes::Ldloc,lb);
-			CFastInvoker::EmitFastInt(il,r);
-			il->EmitCall(OpCodes::Call,EventManager::typeid->GetMethod("HandleEvent"),nullptr);
-			il->Emit(OpCodes::Ret);
-			Delegate^ d = dm->CreateDelegate(ei->EventHandlerType,this);
-			ei->AddEventHandler(source,d);
-		}
-	}
-}
-
-void EventManager::HandleEvent(ObjectArray^ args, Int32 v7ProcNum)
-{
-	try
-	{
-		this->Invoke(callProcDelegate, gcnew ObjectArray(2){args,v7ProcNum});
-	}
-	catch(Exception^ e)
-	{
-		//CBLModule::RaiseExtRuntimeError ((char*)Marshal::StringToHGlobalAnsi(static_cast<String^>(e->ToString())).ToPointer(), mmRedErr);
-	}
-}
-
-void EventManager::InvokeBLProc(ObjectArray^ args, Int32 v7ProcNum)
-{
-	//CValue p1, p2, p3, p4, p5, p6, p7, p8, p9, p10;
-	//CValue *pArray[10]={&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10};
-	CValue **paramArr = (CValue**)calloc(args->Length,sizeof(CValue*));
-	for(int i=0; i<args->Length ; i++)
-	{
-		paramArr[i]=new CValue();
-		CCLRWrapper::ObjectToValue(args[i],args[i]->GetType(),*paramArr[i]);
-	}
-	context->CallAsProc(v7ProcNum,paramArr);
-	//System::Windows::Forms::MessageBox::Show(System::Threading::Thread::CurrentThread->ThreadState.ToString());
-	//CWinApp* maint = AfxGetApp();
-	//if(maint->)
-	free(paramArr);
-}
+ EventManager::EventManager(CCLRWrapper* w, Object^ sender, CBLContext* cont, String^ prefix)
+ {
+ 	source=sender;
+ 	context = cont;
+ 	wrapper = w;
+ 	//System::Threading::Thread::CurrentThread->Name="Main thread";
+ 	//callProcDelegate = Marshal::GetDelegateForFunctionPointer((IntPtr)&CBLContext::CallAsProc,CallAsProcDelegate::typeid);
+ 	array<EventInfo^>^ events=source->GetType()->GetEvents();
+ 	int eventNum=0;
+ 	callProcDelegate = (CallAsProcDelegate^)Delegate::CreateDelegate(CallAsProcDelegate::typeid,this,GetType()->GetMethod("InvokeBLProc"));
+ 	CreateHandle();
+ 	for each(EventInfo^ ei in events)
+ 	{
+ 		char* eventName = (char*)Marshal::StringToHGlobalAnsi(static_cast<String^>(prefix+ei->Name)).ToPointer();
+ 		int r=context->FindMethod(eventName);
+ 		if(r>=0)
+ 		{
+ 			MethodInfo^ invokeMethodInfo=ei->EventHandlerType->GetMethod("Invoke");
+ 			Type^ delegateReturnType = invokeMethodInfo->ReturnParameter->ParameterType;
+ 			array<ParameterInfo^>^ ps = invokeMethodInfo->GetParameters();
+ 			array<Type^>^ paramTypes = gcnew array<Type^>(ps->Length+1);
+ 			paramTypes[0]=EventManager::typeid;
+ 			for (int i = 0; i < ps->Length; i++)
+ 				paramTypes[i+1]=ps[i]->ParameterType;
+ 			DynamicMethod^ dm = gcnew DynamicMethod(String::Empty,delegateReturnType,paramTypes,EventManager::typeid->Module);
+ 			dm->InitLocals=false;
+ 			ILGenerator^ il = dm->GetILGenerator();
+ 			LocalBuilder^ lb= il->DeclareLocal(ObjectArray::typeid);
+ 			CFastInvoker::EmitFastInt(il,ps->Length);
+ 			il->Emit(OpCodes::Newarr,Object::typeid);
+ 			il->Emit(OpCodes::Stloc,lb);
+ 			for (int i = 0; i < ps->Length; i++)
+ 			{
+ 				il->Emit(OpCodes::Ldloc, lb);
+ 				CFastInvoker::EmitFastInt(il,i);
+ 				il->Emit(OpCodes::Ldarg, i+1);
+ 				il->Emit(OpCodes::Stelem_Ref);
+ 			}
+ 			il->Emit(OpCodes::Ldarg_0);
+ 			il->Emit(OpCodes::Ldloc,lb);
+ 			CFastInvoker::EmitFastInt(il,r);
+ 			il->EmitCall(OpCodes::Call,EventManager::typeid->GetMethod("HandleEvent"),nullptr);
+ 			il->Emit(OpCodes::Ret);
+ 			Delegate^ d = dm->CreateDelegate(ei->EventHandlerType,this);
+ 			ei->AddEventHandler(source,d);
+ 		}
+ 	}
+ }
+ 
+ void EventManager::HandleEvent(ObjectArray^ args, Int32 v7ProcNum)
+ {
+ 	try
+ 	{
+ 		this->Invoke(callProcDelegate, gcnew ObjectArray(2){args,v7ProcNum});
+ 	}
+ 	catch(Exception^ e)
+ 	{
+ 		//CBLModule::RaiseExtRuntimeError ((char*)Marshal::StringToHGlobalAnsi(static_cast<String^>(e->ToString())).ToPointer(), mmRedErr);
+ 	}
+ }
+ 
+ void EventManager::InvokeBLProc(ObjectArray^ args, Int32 v7ProcNum)
+ {
+ 	//CValue p1, p2, p3, p4, p5, p6, p7, p8, p9, p10;
+ 	//CValue *pArray[10]={&p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9, &p10};
+ 	CValue **paramArr = (CValue**)calloc(args->Length,sizeof(CValue*));
+ 	for(int i=0; i<args->Length ; i++)
+ 	{
+ 		paramArr[i]=new CValue();
+ 		CCLRWrapper::ObjectToValue(args[i],args[i]->GetType(),*paramArr[i]);
+ 	}
+ 	context->CallAsProc(v7ProcNum,paramArr);
+ 	//System::Windows::Forms::MessageBox::Show(System::Threading::Thread::CurrentThread->ThreadState.ToString());
+ 	//CWinApp* maint = AfxGetApp();
+ 	//if(maint->)
+ 	free(paramArr);
+ }
 
 int  CCLRWrapper::CallAsFunc(int iMethNum,CValue& rValue,CValue **ppValue)
 {

@@ -6,6 +6,21 @@
 //#error "oops"
 #include <vcclr.h>
 #include "FastInvoker.h"
+
+// #define IMPORT_1C __declspec(dllimport)
+// #include <afx.h>
+// #include <afxext.h>
+// #include <afxtempl.h>
+// #include <set>
+// #include <map>
+// #include <WTypes.h>
+// class IDispatch;
+// #include "../../_1Common.2005/1cheaders/type32.h"
+// #include "../../_1Common.2005/1cheaders/types.h"
+// #include "../../_1Common.2005/1cheaders/br32.h"
+// #include "../../_1Common.2005/1cheaders/bkend.h"
+// #include "../../_1Common.2005/1cheaders/basic.h"
+
 using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Security::Permissions;
@@ -47,19 +62,19 @@ public delegate void CallAsProcDelegate(ObjectArray^ args, Int32 v7ProcNum);
 
 class CCLRWrapper;
 
-[System::Security::Permissions::SecurityPermissionAttribute(SecurityAction::Assert,UnmanagedCode=true)]
-ref class EventManager: public System::Windows::Forms::Control
-{
-public:
-	EventManager(CCLRWrapper* wrapper,Object ^ sender, CBLContext* context, String^ prefix);
-	void HandleEvent(ObjectArray^ args, Int32 v7ProcNum);
-	void InvokeBLProc(ObjectArray^ args, Int32 v7ProcNum);
-	CBLContext* context;
-private:
-	CallAsProcDelegate^ callProcDelegate;
-	Object^ source;
-	CCLRWrapper* wrapper;
-};
+//[System::Security::Permissions::SecurityPermissionAttribute(SecurityAction::Assert,UnmanagedCode=true)]
+ ref class EventManager: public System::Windows::Forms::Control
+ {
+ public:
+ 	EventManager(CCLRWrapper* wrapper,Object ^ sender, CBLContext* context, String^ prefix);
+ 	void HandleEvent(ObjectArray^ args, Int32 v7ProcNum);
+ 	void InvokeBLProc(ObjectArray^ args, Int32 v7ProcNum);
+ 	CBLContext* context;
+ private:
+ 	CallAsProcDelegate^ callProcDelegate;
+ 	Object^ source;
+ 	CCLRWrapper* wrapper;
+ };
 
 #endif
 
@@ -118,4 +133,42 @@ public:
 	int  IsSerializable(void);
 	int  SaveToString(CString &);
 	int  SetPropVal(int,CValue const&);
+};
+
+class CCLRContext :	public CBLContext
+{
+	friend class CCLRWrapper;
+	DECLARE_DYNCREATE(CCLRContext);
+protected:
+	CCLRWrapper* clrwrapper;
+public:
+	CCLRContext();
+	CCLRContext(int nParamsCount,	CValue** ppValue);
+	CCLRContext(char const * szClassName);
+	CCLRContext(CCLRWrapper* wrapper);
+	CCLRContext(CGetField* getField, const char* className);
+	~CCLRContext(void);
+	virtual int  CallAsFunc(int,CValue&,CValue**);
+	virtual int  CallAsProc(int,CValue**);
+	virtual int  FindMethod(char const *)const;
+	virtual int  FindProp(char const *)const;
+	//virtual int  GetDestroyUnRefd(void)const {return TRUE;};
+	virtual char const*  GetMethodName(int,int)const;
+	virtual int  GetNMethods(void)const;
+	virtual int  GetNParams(int)const;
+	virtual int  GetNProps(void)const;
+	virtual int  GetParamDefValue(int,int,CValue*)const;
+	virtual char const* GetPropName(int,int)const;
+	virtual int  GetPropVal(int,CValue&)const;
+	//virtual long  GetTypeID(void)const;
+	virtual char const* GetTypeString(void)const;
+	//virtual CType GetValueType(void)const;
+	virtual int  HasRetVal(int)const;
+	virtual int  IsExactValue(void)const;
+	virtual int  IsOleContext(void)const;
+	virtual int  IsPropReadable(int)const;
+	virtual int  IsPropWritable(int)const;
+	virtual int  IsSerializable(void);
+	virtual int  SaveToString(CString &);
+	virtual int  SetPropVal(int,CValue const&);
 };

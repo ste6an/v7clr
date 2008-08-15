@@ -1,5 +1,5 @@
-#include "StdAfx.h"
-#include "CLRContext.h"
+#include "stdafx.h"
+#include "CLRWrapper.h"
 
 IMPLEMENT_DYNCREATE(CCLRContext, CBLContext)
 
