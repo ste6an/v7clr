@@ -176,24 +176,24 @@ CCLRWrapper::CCLRWrapper(CGetField* getField, const char* className)
 	Type^ t = Type::GetType(s);
 	if(t==nullptr)
 		CBLModule::RaiseExtRuntimeError ("Класс не найден", mmRedErr);
-	if(!t->IsSubclassOf(Control::typeid))
-		CBLModule::RaiseExtRuntimeError ("Класс не является наследником Windows.Forms.Control", mmRedErr);
+ 	if(!t->IsSubclassOf(Control::typeid))
+ 		CBLModule::RaiseExtRuntimeError ("Класс не является наследником Windows.Forms.Control", mmRedErr);
 	Control^ c = static_cast<Control^>(Activator::CreateInstance(t));
 	CWnd* w= getField->m_GetDoc->GetFieldWnd(getField);
 	CWnd* pw = w->GetParent();
 	CRect r;
 	w->GetWindowRect(r);
 	int id=w->GetDlgCtrlID();
-	w->GetParent()->ScreenToClient(r);
-	w->Detach();
+	pw->ScreenToClient(r);
+	//w->Detach();
 	//CWnd* childw = new CWnd();
 	DWORD dwStyle = WS_CHILD | (getField->GetCtrlInfo()->m_CtrlType!=1 ? WS_TABSTOP : 0);
-	if (getField->m_Visible)
+	//if (getField->m_Visible)
 		dwStyle |= WS_VISIBLE;
 	if (getField->GetReadOnly())
 		dwStyle |= WS_DISABLED;
-	//((NativeWindow^)c->WindowTarget)->AssignHandle(IntPtr(w->m_hWnd));
-	w->Attach((HWND)c->Handle.ToPointer());
+	((NativeWindow^)c->WindowTarget)->AssignHandle(IntPtr(w->m_hWnd));
+	//w->Attach((HWND)c->Handle.ToPointer());
 	c->Top=r.top;
 	c->Left=r.left;
 	//c->CreateHandle();
@@ -204,14 +204,17 @@ CCLRWrapper::CCLRWrapper(CGetField* getField, const char* className)
 
 CCLRWrapper::~CCLRWrapper(void)
 {
-	if(static_cast<EventManager^>(eventManager)!=nullptr)
-		delete eventManager;
-	if(pClrObj->GetType()->IsSubclassOf(Control::typeid))
+ 	if(static_cast<EventManager^>(eventManager)!=nullptr)
+ 		delete eventManager;
+	if(pClrObj)
 	{
-		Control^ c = static_cast<Control^>((Object^)pClrObj);
-		((NativeWindow^)c->WindowTarget)->DestroyHandle();
+		if(pClrObj->GetType()->IsSubclassOf(Control::typeid))
+		{
+			Control^ c = static_cast<Control^>((Object^)pClrObj);
+			((NativeWindow^)c->WindowTarget)->DestroyHandle();
+		}
+		delete pClrObj;
 	}
-	delete pClrObj;
 	for(propInfoMap_t::iterator i=propInfoMap.begin();i!=propInfoMap.end();i++)
 	{
 		delete i->second;
@@ -399,7 +402,7 @@ int  CCLRWrapper::CallAsFunc(int iMethNum,CValue& rValue,CValue **ppValue)
 			String^ prefix = gcnew String(ppValue[1]->m_String);
 			if(val->type==100)
 			{
-				eventManager = gcnew EventManager(this,pClrObj,val->m_Context,prefix);
+ 				eventManager = gcnew EventManager(this,pClrObj,val->m_Context,prefix);
 			}
 			return TRUE;
 		}
